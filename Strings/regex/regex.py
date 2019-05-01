@@ -13,7 +13,7 @@ def isMatchRec(s, p, pos1, pos2):
     if pos2 == len(p):
         return (pos1 == len(s))
 
-    if (pos2 < len(p)-1) and p[pos2+1] == '*':
+    if (pos2 < len(p)-1) and p[pos2+1] == '*':  # Revisit based on DP fast example -> f(i+1, j) or f(i, j+1) if pattern[j] == '*'
         res1 = isMatchRec(s, p, pos1, pos2+2)   # Check zero occurence
         res2 = (s[pos1] == p[pos2])  # Check 1 occurence
         res3 = isMatchRec(s, p, pos1+1, pos2+2)

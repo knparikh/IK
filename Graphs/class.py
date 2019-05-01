@@ -1,3 +1,26 @@
+# Litmus test for graph problem:
+# Are values of nodes well-defined.
+# Are relationships well-defined.
+# Alien dictionary - words can be vertices. But order of words is just a linked list, not useful for question.
+#               or - chars can be vertices, order of char is edge which is relationship
+
+# Graph problems generally will have these giveaways:
+#   - Traversal needed
+#   - Shortest path problems/distance/transformation
+#   - Ordering of things needed
+#   - If relationships has weights, then Djikstra needed. Else BFS based shortest path is ok.
+
+# for graph problems, use this example double diamond
+        1
+      /   \
+    2       3
+      \   /
+        4
+      /   \
+    5       6
+      \   /
+        7
+
 # For sparse graph, use list of vertex for dense graph, use adjacency matrix for quick lookup.
 # Adjacency matrix - quick lookup, more space (v^2)
 # List of vertex, may be less space, but lokup for path between vertex can be O(v^2). To optimize use hash of hashset.
@@ -56,6 +79,7 @@ def get_path(path, dst):
 
 
 # Clone a graph. Based on dfs
+# In case of bfs, need to keep visited to handle cycles
 def clone(v, clone_map):
     if v in clone_map:
         return clone_map[v]

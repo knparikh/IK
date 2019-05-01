@@ -1,0 +1,168 @@
+System Design
+https://github.com/yangshun/tech-interview-handbook/tree/master/design
+
+1. News feed/ Pub sub/ Push pull/ push fanout/ pull fanout
+http://blog.gainlo.co/index.php/2016/03/29/design-news-feed-system-part-1-system-design-interview-questions/
+https://www.quora.com/What-are-the-scaling-issues-to-keep-in-mind-while-developing-a-social-network-feed
+Twitter architecture  http://highscalability.com/blog/2013/7/8/the-architecture-twitter-uses-to-deal-with-150m-active-users.html
+https://github.com/yangshun/tech-interview-handbook/blob/master/design/news-feed.md
+
+Resources:
+Engineering blogs
+White papers
+HackerNews
+
+Sharding - Data partitioning based on affinity etc
+Load Balance - Partitioning compute power/ requests.
+Sharding enables load balancing.
+FB talk about Rocks DB enhancements
+
+News feed
+---------
+
+1. Collection of user posts
+2. Post consists of:
+    - TS
+    - Content: Text/Image/Link/Video
+    - Author
+    - Stats: Likes/Comments/Shares
+
+3. Front End/ Display
+    - How Frame looks like
+    - api/users/userid/newsfeed GET. Can include user-device type in header of req, so server knows how many records to send back. or can be API parameter.
+        resp json 
+        {
+            result: {
+                posts: [ {id, type: image/video/link/status, ts, author, content, thumbnail<url>, likes,
+                          total_comments, comments:[c1, c2, c3], HATEOS
+                         }
+                ]
+            }
+        }
+        For comments, they can be queried from UI or in API - so join can be on client side or server side.
+        Instead of doing joins, cache comments on server side using k,v store memcached. Also update this cache so it holds recent posts.
+        MAU Monthly Active - users can dictate the users whose content is cached in K,V store.
+
+4. Data Model
+    Posts
+        post_id
+        type
+        user_id/author_id
+        
+    Likes
+        post_id
+
+    Shares
+        post_id
+
+
+    Deciding between SQL/Non SQL - if application requires data consistency/integration, use SQL. Example updating one table needs update of other tables, non-sql dbs or k,v stores are not good choice. If deleting post requires deleting likes/shares, easy to do with SQL with constraints. To scale with SQL, use sharding. With non-sql, will need to add more compute power. Also ACID property - use SQL DB.
+    Capacity planning for SQL DBs - Over provision, write to master/ read from replicas, introducing shards.
+    For Non-SQL DBs - refactor code, add instances. Use when not too many joins, not too many relationships.
+
+5.
+                        A               News Feed---------------->      D
+                                    1.publish post_id, author  |
+        Client          P                                    Topic      B
+                                            ___________________|
+                        I                   |
+                                        Notification           2. MemCache LRU cache of followers, based on last logged in ts.
+                                        3. Push notification to MAU first, then send email to 2nd month of MAU, so on
+
+        PostReceived(post_id):
+            author = getAuthor(post_id)
+            followers = Followers(author)
+            for each follower:
+                PushNotify(follower, post_id)
+
+6. In background, periodically update post list for users, based on ranking.
+
+7. Usually a hybrid of push (for active users) and pull for new users logging in.
+
+
+
+Timeseries DB
+-------------
+Freq/Volume: 100's of hosts emmitting avg, max, min every min. store for 1 year.
+Example of postgres.
+Read: Storm/Heron - Does aggregration in memory. Read Topology, Ring Buffers.
+
+- Partition records by set of host per DB. So read/write will go to all servers separately.
+
+
+
+
+PubSub:
+--------
+- Scalability aspect - Different subscribers can consume data at different rates. Kafka does not keep track of offsets.
+Subscriber should request with offsets. For different subscribers at different offsets, different chunks will all be memory mapped. But since files on disk are only appended, sequential seek is fast - secret behind apache kafka.
+
+- Fault tolerance of broker - have backups of data.  Talk about leader election. Talk about RAID if u can.
+
+- If topic file becomes too large to fit in 1 server, we need to store in another partition.
+
+- Talk about consumer groups
+
+
+
+
+Messenger Application
+---------------------
+Use cases:
+1. Listing contacts
+2. Status - Online/Offline Last seen time
+3. Messages - Online/Offline
+            - Handling text (Images/Videos)
+            - Notification
+
+Capacity/Sizing
+UserBase: 1B users
+DAU:     500 M
+concurrent users = 20%
+Msg size: 100 bytes
+Avg: 25 msg/day
+Size/day = 500 * 10^6 * 25 * 100 = 125 * 10^10 - 1.25TB
+Year: 1TB * 30 * 12 = 400 TB
+5 years = 2 PB
+
+
+Ingress to server: 15 MB / sec 
+
+Communication - Client/Server
+    1. REST/HTTP1.0 - Disadv client has to keep polling server for new messages.
+    2. WebSockets - Bidirectional communication. Persistent connection - so server needs session management.
+    3. GRPC - Proto3 (Netty) Google RPC - adv HTTP/2.x bidrectional, client/server can stream using chunks. 
+Typically, any persistent connections are not scalable. 
+
+
+C1                              S1    -> Queue in case of whatsapp  Else Redis -> User_Info
+
+C2              LB              S2
+
+C3                              S3
+
+Cassandra Write optimized - used for storing messages -  User Map
+
+User map
+User1 User2 Conv Id   TS
+
+
+Conv table
+CID Text ts From  To
+1    hi      C1   C2
+
+
+Once entry is added in Conv table, send back delivery notification.
+
+- Cannot do peer to peer connections
+Since they have to go through wifi etc, firewall problems since ports can be blocked. Security concerns. That's why need to go through firewall to server.
+
+
+
+
+
+
+
+
+
+
