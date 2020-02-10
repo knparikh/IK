@@ -49,7 +49,7 @@ def minWindowHelper(s, t, s_len, t_len):
 
                 # Record length of substring, if its shorter
                 length = end-st+1
-                if length < min_length:
+                if length <= min_length:
                     min_length = length
                     out = s[st:end+1]
                     if min_length == len(t.keys()): # Min length cannot be lesser then length of t.

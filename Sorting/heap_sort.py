@@ -59,7 +59,7 @@ class Heap(object):
                 break
 
     def heapify(self, i):
-        while (((2*i) + 1) < self.size):
+        while (((2*i) + 1) < self.size):  # While left child exists
             j = (2*i) + 1
             # Find the smaller of the two children
             if((j < self.size-1) and (self.arr[j] > self.arr[j+1])):

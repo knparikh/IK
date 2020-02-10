@@ -33,4 +33,7 @@ def partition(inp, start, end):
             inp[left] = inp[right]
             inp[right] = temp
 
+    # Swap pivot and right
+    inp[start], inp[right] = inp[right], inp[start]
+
     return right
